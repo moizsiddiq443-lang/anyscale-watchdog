@@ -68,22 +68,25 @@ function deploy(acct, cloud) {
 }
 function gitCommitPush() {
   const env = Object.assign({}, process.env, { GIT_TERMINAL_PROMPT: "0" });
-  const run = (args) => { const r = spawnSync("git", args, { env, encoding: "utf8" }); if (r.status !== 0) log("git " + args[0] + " -> " + (r.stdout || "") + (r.stderr || "")); return r.status === 0; };
+  const run = (args) => { const r = spawnSync("git", args, { env, encoding: "utf8" }); log("git " + args.join(" ") + " -> rc=" + r.status + " " + (r.stdout || "").trim().slice(0, 200) + (r.stderr || "").trim().slice(0, 200)); return r.status === 0; };
   run(["config", "user.email", "watchdog-bot@users.noreply.github.com"]);
   run(["config", "user.name", "anyscale-watchdog-bot"]);
-  run(["add", STATE, LOG]);
+  run(["add", "-f", STATE, LOG]);
   const c = spawnSync("git", ["commit", "-m", "watchdog state " + new Date().toISOString()], { env, encoding: "utf8" });
-  if (c.status === 0 || /nothing to commit/i.test(c.stdout + c.stderr)) {
-    const repo = process.env.GITHUB_REPOSITORY;
-    const token = process.env.GITHUB_TOKEN;
-    if (repo && token) {
-      run(["push", "https://x-access-token:" + token + "@github.com/" + repo + ".git", "HEAD:" + (process.env.GITHUB_REF_NAME || "main")]);
-    }
+  log("git commit -> rc=" + c.status + " " + (c.stdout || "").trim().slice(0, 150) + (c.stderr || "").trim().slice(0, 150));
+  const repo = process.env.GITHUB_REPOSITORY;
+  const token = process.env.GITHUB_TOKEN;
+  if (repo && token) {
+    const p = spawnSync("git", ["push", "https://x-access-token:" + token + "@github.com/" + repo + ".git", "HEAD:" + (process.env.GITHUB_REF_NAME || "main")], { env, encoding: "utf8", timeout: 60000 });
+    log("git push -> rc=" + p.status + " " + (p.stdout || "").trim().slice(0, 200) + (p.stderr || "").trim().slice(0, 200));
+  } else {
+    log("git push SKIPPED (no GITHUB_REPOSITORY/GITHUB_TOKEN)");
   }
 }
 
 (async () => {
-  log("watchdog-gha batch pass (accounts=" + ACCOUNTS.length + ")");
+  log("watchdog-gha batch pass (accounts=" + ACCOUNTS.length + ") cwd=" + process.cwd());
+  log("state.json exists at start: " + fs.existsSync(STATE) + " | GITHUB_REPOSITORY=" + (process.env.GITHUB_REPOSITORY || "none") + " | GITHUB_REF_NAME=" + (process.env.GITHUB_REF_NAME || "none"));
   if (!ACCOUNTS.length) { log("NO KEYS — check GitHub Secrets MARIE_KEY/JOSH_KEY/KER_KEY/CLAZ_KEY"); gitCommitPush(); process.exit(1); }
   const state = loadState();
   for (const acct of ACCOUNTS) {
