@@ -21,6 +21,7 @@ jobs:
       JOSH_KEY: ${{ secrets.JOSH_KEY }}
       KER_KEY: ${{ secrets.KER_KEY }}
       CLAZ_KEY: ${{ secrets.CLAZ_KEY }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
         with:
