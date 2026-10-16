@@ -1,7 +1,7 @@
 {
   "deployed": {},
   "claimAttempt": {},
-  "lastPoll": "2026-10-16T06:26:04.688Z",
+  "lastPoll": "2026-10-16T11:49:07.187Z",
   "lastStatus": {
     "marie": "CLAIMED",
     "josh": "IN_WAITLIST",
